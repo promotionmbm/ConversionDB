@@ -102,6 +102,10 @@ namespace WindowsFormsApp1
                     DebcoConversion.addColors(bankersExcel, attributeExcel);
                     MessageBox.Show("Les couleurs ont été ajoutées avec succès!");
                 }
+                else if (comboBox2.Text.Equals("Merge"))
+                {
+
+                }
             }
             else if (comboBox1.Text.Equals("Debco"))
             {
@@ -490,7 +494,7 @@ namespace WindowsFormsApp1
                 button3.Visible = true;
                 button4.Visible = false;
             }
-            else if(comboBox2.Text.Equals("Ajouter images"))
+            else if (comboBox2.Text.Equals("Ajouter images"))
             {
                 textBox1.Visible = true;
                 textBox2.Visible = false;
@@ -539,6 +543,24 @@ namespace WindowsFormsApp1
                 button2.Visible = true;
                 button3.Visible = true;
                 button4.Visible = true;
+            }
+            else if (comboBox2.Text.Equals("Merge"))
+            {
+                textBox1.Visible = true;
+                textBox2.Visible = true;
+                textBox3.Visible = false;
+                textBox1.Text = "";
+                textBox2.Text = "";
+                label2.Visible = true;
+                label3.Visible = true;
+                label5.Visible = false;
+                label2.Text = "Fichier Excel Converti";
+                label3.Text = "Fichier Attributs";
+                label5.Text = "";
+                button1.Visible = true;
+                button2.Visible = true;
+                button3.Visible = true;
+                button4.Visible = false;
             }
         }
 

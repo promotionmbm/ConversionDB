@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WindowsFormsApp1.Universal_Info.Utils;
 
 namespace WindowsFormsApp1.Sanmar
 {
@@ -25,116 +26,53 @@ namespace WindowsFormsApp1.Sanmar
                 FileStream fs = File.Create(directory + "/debug.txt");
                 fs.Close();
             }
-            StreamWriter writer = new StreamWriter(directory + "/debug.txt", true);
             CatConversionList catConversionList = new CatConversionList();
-            ArrayList sanmarItems = new ArrayList();
+            List<OutsideItem> sanmarItems = new List<OutsideItem>();
             ArrayList sanmarItemsFr = new ArrayList();
             ArrayList sanmarDescFr = loadDescriptionsFrItems(descText);
-            for(int i = 1; i < sheet.getRowCount()+1; i++)
+            String itemId = "";
+            SanmarItem item = new SanmarItem();
+            for (int i = 1; i < sheet.getRowCount()+1; i++)
             {
-                SanmarItem item = new SanmarItem();
-                item.itemID = sheet.readCell(i, 2);
-                item.color = sheet.readCell(i, 3);
-                item.size = sheet.readCell(i, 4);
-                item.imageURL = sheet.readCell(i, 11);
-                item.categories = sheet.readCell(i, 12).Split(new String[] { "; "}, StringSplitOptions.None);
-                item.name = sheet.readCell(i, 13);
-                if(sheet.readCell(i,16).Contains("Call For Pricing"))
+                if (itemId.Equals(sheet.readCell(i, 2)))
                 {
-                    item.price = getPrice(sheet.readCell(i, 2));
+                    item.colorSizes.Add(new ColorSize(sheet.readCell(i, 3), sheet.readCell(i, 4)));
                 }
-                else {
-                    item.price = Math.Round(sheet.readDoubleCell(i, 17)/0.46, 2);
+                else
+                {
+                    if (!itemId.Equals(""))
+                    {
+                        sanmarItems.Add(item);
+                        item = new SanmarItem();
+                    }
+                    itemId=sheet.readCell(i, 2);
+                    item.itemID = itemId;
+                    item.colorSizes.Add(new ColorSize(sheet.readCell(i, 3), sheet.readCell(i, 4)));
+                    item.imageURL = sheet.readCell(i, 11);
+                    item.categories = sheet.readCell(i, 12).Split(new String[] { "; " }, StringSplitOptions.None);
+                    item.name = sheet.readCell(i, 13);
+                    if (sheet.readCell(i, 16).Contains("Call For Pricing"))
+                    {
+                        item.price = getPrice(sheet.readCell(i, 2));
+                    }
+                    else
+                    {
+                        item.price = Math.Round(sheet.readDoubleCell(i, 17) / 0.46, 2);
+                    }
+                    item.description = sheet.readCell(i, 14).Replace("\n", "<br>") + "<br/><b><font style=\"font-size:20px\">Discounts on volume may be applicable.<br/><br/>Contact us for a price with an embroidery or a serigraphy.</b></font><br/>";
                 }
-                item.description = sheet.readCell(i, 14);
-                sanmarItems.Add(item);
             }
             for(int i = 0; i < sheetFr.getRowCount(); i++)
             {
                 if(!sheetFr.readCell(i, 0).Equals(""))
                 {
-                    SanmarItem item = new SanmarItem();
+                    item = new SanmarItem();
                     item.name = sheetFr.readCell(i, 1);
                     item.itemID = sheetFr.readCell(i+1, 1);
                     sanmarItemsFr.Add(item);
                 }
             }
-            ArrayList itemsDB = new ArrayList();
-            ProduitDB groupItem = new ProduitDB();
-            groupItem.code = "";
-            for(int i = 0; i < sanmarItems.Count; i++)
-            {
-                SanmarItem item = (SanmarItem)sanmarItems[i];
-                if (!item.itemID.Equals(""))
-                {
-                    if (!groupItem.code.Equals(item.itemID + "_group"))
-                    {
-                        groupItem = new ProduitDB();
-                        groupItem.code = item.itemID + "_group";
-                        groupItem.status = "enable";
-                        groupItem.brand = "";
-                        groupItem.titleEn = item.name;
-                        groupItem.titleFr = getNameFr(item.itemID, sanmarItemsFr);
-                        groupItem.descriptionEn = item.description.Replace("\n", "<br>") + "<br/><b><font style=\"font-size:20px\">Discounts on volume may be applicable.<br/><br/>Contact us for a price with an embroidery or a serigraphy.</b></font><br/>";
-                        groupItem.descriptionFr = getDescriptionFr(sanmarDescFr, item.itemID);
-                        if (groupItem.descriptionFr.Equals(""))
-                        {
-                            writer.WriteLine(item.itemID);
-                        }
-                        groupItem.categories = new ArrayList();
-                        groupItem.attributeContext = "Garment";
-                        foreach (String category in item.categories)
-                        {
-                            changeCategories(groupItem.code, category);
-                            catConversionList.checkCategories(category, groupItem.categories);
-                        }
-                        foreach (String category in groupItem.categories)
-                        {
-                            groupItem.attributeContext = CatConversionList.getCategoryContext(category, catConversionList);
-                            break;
-                        }
-                        groupItem.categories = ProduitDB.fillCategories(groupItem.categories);
-                        groupItem.notes = "Sanmar";
-                        groupItem.imageURL = item.imageURL;
-                        itemsDB.Add(groupItem);
-                    }
-                }
-                ProduitDB produit = new ProduitDB();
-                ProduitDB.setChildInfo(groupItem, produit);
-                produit.code = item.itemID + "_" + TextManager.setItemName(item.color) + "_" + TextManager.setItemName(item.size);
-                produit.attributeCouleur = item.color;
-                produit.attributeSize = item.size;
-                if (item.size.Equals("2XL")|| item.size.Equals("2XLT"))
-                {
-                    produit.attributeSize="XXL";
-                }
-                else if (item.size.Equals("3XLT"))
-                {
-                    produit.attributeSize = "XXXL";
-                }
-                else if (item.size.Equals("XLT"))
-                {
-                    produit.attributeSize = "XL";
-                }
-                else if (item.size.Equals("LT"))
-                {
-                    produit.attributeSize = "L";
-                }
-                else if (item.size.Equals("4XLT"))
-                {
-                    produit.attributeSize = "XXXXL";
-                }
-                else if (item.size.Equals("OSFA"))
-                {
-                    produit.attributeSize = "";
-                }
-                produit.imageURL = item.imageURL;
-                produit.price = item.price;
-                produit.titleEn = item.name;
-                produit.descriptionEn = item.description;
-                itemsDB.Add(produit);
-            }
-            writer.Close();
+            List<ProduitDB> itemsDB = ConversionUtils.getProducts(sanmarItems);
             Excel output = Excel.createAndUseFile(sheet.getPath());
             ProduitDB.writeDBHeader(output);
             for(int i=0; i < itemsDB.Count; i++)

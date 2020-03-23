@@ -8,6 +8,7 @@ using System.Xml;
 using System.IO;
 using BaseDonneeConversion;
 using System.Collections;
+using WindowsFormsApp1.Universal_Info.Utils;
 
 namespace WindowsFormsApp1
 {
@@ -34,7 +35,7 @@ namespace WindowsFormsApp1
             return this.file;
         }
 
-        public static ArrayList readPcnaXML(XMLFile infoFile, XMLFile pricesFile, XMLFile imagesFile)
+        public static List<ProduitDB> readPcnaXML(XMLFile infoFile, XMLFile pricesFile, XMLFile imagesFile)
         {
             double USDtoCAD = 1.35;
             ArrayList produits = new ArrayList();
@@ -102,106 +103,26 @@ namespace WindowsFormsApp1
                             sizes = (from sku in el.Element(infoFile.ns + "Skus").Elements(infoFile.ns + "Sku")
                                      select sku.Element(infoFile.ns + "Size")).Distinct()
                         };
+            List<OutsideItem> pcnaItems = new List<OutsideItem>();
             foreach (var item in items)
             {
                 Boolean added = false;
-                ProduitDB parent = new ProduitDB();
-                parent.code = item.code + "_Group";
-                parent.titleEn = item.name;
-                parent.titleFr = item.name;
-                parent.descriptionEn = item.description;
-                parent.descriptionFr = item.description;
-                parent.notes = item.division;
-                catConversionList.checkCategories(item.category, parent.categories);
-                parent.categories=ProduitDB.fillCategories(parent.categories);
-                parent.minQty = -1;
-                if (item.apparel)
-                {
-                    parent.attributeContext = "Garnment";
-                }
-                else
-                {
-                    parent.attributeContext = "Article publicitaire";
-                }
-                foreach (var code in item.skus)
-                {
-                    ProduitDB child = new ProduitDB();
-                    ProduitDB.setChildInfo(parent, child);
-                    child.code = item.code;
-                    if (!code.color.Equals(""))
-                    {
-                        child.code = child.code +"_"+ TextManager.setItemName(code.color);
-                    }
-                    if (code.size != null)
-                    {
-                        child.code = child.code + "_" + code.size;
-                    }
-                    foreach(var image in code.imageURL)
-                    {
-                        foreach(var link in image.url)
-                        {
-                            if (!link.img.Equals(""))
-                            {
-                                child.imageURL = link.img;
-                            }
-                        }
-                    }
-                    if (!child.imageURL.Equals("")) {
-                        child.attributeCouleur = TextManager.convertColor(code.color);
-                        child.attributeSize = code.size;
-                        child.minQty = -1;
-                        child.price = 0;
-                        ArrayList quantities = new ArrayList();
-                        ArrayList prices = new ArrayList();
-                        if (!child.notes.Equals("Trimark")) {
-                            foreach (var price in code.CANprices)
-                            {
-                                foreach (var priceQty in price.pricesQty)
-                                {
-                                    quantities.Add(priceQty.qty);
-                                    prices.Add(priceQty.price);
-                                    if (child.minQty == -1)
-                                    {
-                                        child.minQty = priceQty.qty;
-                                    }
-                                    else if (child.minQty > priceQty.qty)
-                                    {
-                                        child.minQty = priceQty.qty;
-                                    }
-                                    if (child.price < priceQty.price)
-                                    {
-                                        child.price = priceQty.price;
-                                    }
-                                }
-                                parent.minQty = child.minQty;
-                                parent.price = child.price;
-                                parent.imageURL = child.imageURL;
-                                if (!added)
-                                {
-                                    parent.descriptionEn = ProduitDB.setDescription(parent.descriptionEn, quantities, prices, false);
-                                    parent.descriptionFr = ProduitDB.setDescription(parent.descriptionFr, quantities, prices, true);
-                                    if (parent.price == 0)
-                                    {
-                                        break;
-                                    }
-                                    produits.Add(parent);
-                                    added = true;
-                                    child.descriptionEn = parent.descriptionEn;
-                                    child.descriptionFr = parent.descriptionFr;
-                                }
-                                Console.WriteLine(child.code);
-                                Console.WriteLine(item.code);
-                                if (!child.code.Equals(item.code))
-                                {
-                                    produits.Add(child);
-                                }
-                            }
-                        }
-                    }
-                }
+                PcnaItem pcnaItem = new PcnaItem();
+                pcnaItem.code = item.code;
+                List<String> codeStrings= item.skus.Cast<String>().ToList();
+                pcnaItem.codes = codeStrings.ToArray<String>();
+                pcnaItem.division = item.division;
+                pcnaItem.description = item.description;
+                pcnaItem.name = item.name;
+                pcnaItem.category = item.category;
+                pcnaItem.apparel = item.apparel;
+                pcnaItem.giftSet = item.giftSet;
+                pcnaItem.colors = item.colors.Cast<String>().ToList();
+                pcnaItem.sizes = item.sizes.Cast<String>().ToList();
+                pcnaItems.Add(pcnaItem);
             }
             Console.WriteLine("Fini d'écrire les objets");
-            return produits;
+            return ConversionUtils.getProducts(pcnaItems);
         }
 
         public static void writeFile(XMLFile file)

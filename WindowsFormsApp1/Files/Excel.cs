@@ -3,7 +3,7 @@ using ClosedXML.Excel;
 
 namespace WindowsFormsApp1
 {
-    class Excel
+    public class Excel
     {
         String path = "";
         XLWorkbook wb;

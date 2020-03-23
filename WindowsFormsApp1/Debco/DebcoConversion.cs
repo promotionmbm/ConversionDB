@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using BaseDonneeConversion;
+using WindowsFormsApp1.Universal_Info.Utils;
 
 namespace WindowsFormsApp1
 {
@@ -11,12 +13,13 @@ namespace WindowsFormsApp1
         {
             int rowCount = sheet.getRowCount();
             int colCount = sheet.getColumnCount();
-            ArrayList debcoItems = new ArrayList();
+            List<OutsideItem> debcoItems = new List<OutsideItem>();
             CatConversionList categoriesList = new CatConversionList();
             for (int i = 1; i < rowCount; i++)
             {
                 DebcoItem item = new DebcoItem();
                 item.itemID = sheet.readCell(i, 0);
+                Console.WriteLine(item.itemID);
                 item.nameEn = sheet.readCell(i, 1).ToLower();
                 item.nameFr = sheet.readCell(i, 2).ToLower();
                 item.descriptionEn = sheet.readCell(i, 3);
@@ -40,53 +43,7 @@ namespace WindowsFormsApp1
                 item.majorCategory = sheet.readCell(i, 105);
                 debcoItems.Add(item);
             }
-            ArrayList dbItems = new ArrayList();
-            for (int i = 0; i < debcoItems.Count; i++)
-            {
-                ProduitDB itemGroup = new ProduitDB();
-                DebcoItem item = (DebcoItem)debcoItems[i];
-                itemGroup.code = item.itemID+"_group";
-                itemGroup.titleEn = item.nameEn;
-                itemGroup.titleFr = item.nameFr;
-                itemGroup.descriptionEn = ProduitDB.setDescription(item.descriptionEn, item.quantities, item.prices, false);
-                itemGroup.descriptionFr = ProduitDB.setDescription(item.descriptionFr, item.quantities, item.prices, false);
-                itemGroup.imageURL = item.imageURL;
-                itemGroup.type = "proposal";
-                ArrayList categories = new ArrayList();
-                for (int k = 0; k < item.category.Length; k++)
-                {
-                    categoriesList.checkCategories(item.category, categories);
-                }
-                while (categories.Count < 9)
-                {
-                    categories.Add("");
-                }
-                itemGroup.categories = categories;
-                itemGroup.attributeContext = CatConversionList.getCategoryContext((String)itemGroup.categories[0], categoriesList);
-                itemGroup.notes = "Debco";
-                dbItems.Add(itemGroup);
-                for (int j = 0; j < item.colors.Length; j++)
-                {
-                    if (!item.colors[j].Equals(""))
-                    {
-                        ProduitDB itemDB = new ProduitDB();
-                        itemDB.code = item.itemID + "_" + item.colors[j];
-                        itemDB.code = TextManager.setItemName(itemDB.code);
-                        ProduitDB.setChildInfo(itemGroup, itemDB);
-                        if (item.prices.Count > 0)
-                        {
-                            itemDB.price = (double)item.prices[0];
-                        }
-                        if (item.quantities.Count > 0)
-                        {
-                            itemGroup.minQty = (int)item.quantities[0];
-                        }
-                        itemDB.attributeCouleur = item.colors[j];
-                        itemDB.notes = "Debco";
-                        dbItems.Add(itemDB);
-                    }
-                }
-            }
+            List<ProduitDB> dbItems = ConversionUtils.getProducts(debcoItems);
             Excel output = Excel.createAndUseFile(sheet.getPath());
             ProduitDB.writeDBHeader(output);
             for (int i = 0; i < dbItems.Count; i++)
@@ -121,7 +78,7 @@ namespace WindowsFormsApp1
                 if (item.colors.Length > 0)
                 {
                     ProduitDB itemGroup = new ProduitDB();
-                    itemGroup.code = item.itemID + "_Group";
+                    itemGroup.sku = item.itemID + "_Group";
                     itemGroup.imageURL = item.imageURL;
                     ftpClient.downloadFile(itemGroup, imageDirectory, file);
                     dbItems.Add(itemGroup);
@@ -130,10 +87,10 @@ namespace WindowsFormsApp1
                         if (!item.colors[j].Equals(""))
                         {
                             ProduitDB itemDB = new ProduitDB();
-                            itemDB.code = item.itemID + "_" + item.colors[j];
-                            itemDB.code = itemDB.code.Replace("/", "_");
-                            itemDB.code = itemDB.code.Replace(" ", "_");
-                            itemDB.code = itemDB.code.Replace("\\", "_");
+                            itemDB.sku = item.itemID + "_" + item.colors[j];
+                            itemDB.sku = itemDB.sku.Replace("/", "_");
+                            itemDB.sku = itemDB.sku.Replace(" ", "_");
+                            itemDB.sku = itemDB.sku.Replace("\\", "_");
                             itemDB.imageURL = item.imageURL;
                             ftpClient.downloadFile(itemDB, imageDirectory, file);
                             dbItems.Add(itemDB);

@@ -151,7 +151,8 @@
             "Categories",
             "Couleurs",
             "Nettoyage",
-            "Items manquants"});
+            "Items manquants",
+            "Merge"});
             this.comboBox2.Location = new System.Drawing.Point(139, 13);
             this.comboBox2.Name = "comboBox2";
             this.comboBox2.Size = new System.Drawing.Size(121, 21);

@@ -14,7 +14,7 @@ namespace WindowsFormsApp1
     {
         public static void convertPcna(XMLFile infoFile, XMLFile pricesFile, XMLFile imagesFile)
         {
-            ArrayList produits=XMLFile.readPcnaXML(infoFile, pricesFile, imagesFile);
+            List<ProduitDB> produits=XMLFile.readPcnaXML(infoFile, pricesFile, imagesFile);
             Excel excelFinal = Excel.createAndUseFile(pricesFile.getPath().Replace(".xml", ".xlsx"));
             ProduitDB.writeDBHeader(excelFinal);
             Console.WriteLine("Finished creating items");

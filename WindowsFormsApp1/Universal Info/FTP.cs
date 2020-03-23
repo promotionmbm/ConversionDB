@@ -28,22 +28,22 @@ namespace WindowsFormsApp1
         {
             if (!item.imageURL.Equals(""))
             {
-                client.DownloadFile(item.imageURL, directory + item.code + ".jpg");
-                Console.WriteLine("Downloading" + item.code + "");
+                client.DownloadFile(item.imageURL, directory + item.sku + ".jpg");
+                Console.WriteLine("Downloading" + item.sku + "");
             }
             else
             {
-                Console.WriteLine("Writing" + item.code + "");
-                writer.WriteLine(item.code);
+                Console.WriteLine("Writing" + item.sku + "");
+                writer.WriteLine(item.sku);
             }
         }
 
         public void uploadFile(ProduitDB item, String directory)
         {
-            String filePath = directory + item.code + ".jpg";
-            Console.WriteLine("Uploading from " + directory + item.code + ".jpg");
+            String filePath = directory + item.sku + ".jpg";
+            Console.WriteLine("Uploading from " + directory + item.sku + ".jpg");
             if (File.Exists(filePath)) { 
-                client.UploadFile("ftp://www.mbmpromotion.com/PhotoImport/" + item.code + ".jpg", filePath);
+                client.UploadFile("ftp://www.mbmpromotion.com/PhotoImport/" + item.sku + ".jpg", filePath);
             }
         }
 
@@ -77,7 +77,7 @@ namespace WindowsFormsApp1
             for (int i = 1; i < rowCount; i++)
             {
                 ProduitDB item = new ProduitDB();
-                item.code = sheet.readCell(i, 0);
+                item.sku = sheet.readCell(i, 0);
                 item.imageURL = sheet.readCell(i, 28);
                 ftpClient.downloadFile(item, imageDirectory, file);
                 items.Add(item);

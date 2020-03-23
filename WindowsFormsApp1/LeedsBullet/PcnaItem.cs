@@ -1,35 +1,53 @@
-﻿using System;
+﻿using BaseDonneeConversion;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WindowsFormsApp1.Universal_Info.Utils;
 
 namespace WindowsFormsApp1
 {
-    class PcnaItem
+    class PcnaItem : OutsideItem
     {
-        //
-        String code { get; set; }
-        //
-        String[] codes { get; set; }
-        //
-        String division { get; set; }
-        //
-        String description { get; set; }
-        //
-        String name { get; set; }
-        //
-        String category { get; set; }
-        //
-        Boolean apparel { get; set; }
-        //
-        Boolean ecoFriendly { get; set; }
-        //
-        Boolean giftSet { get; set; }
-        //
-        ArrayList colors { get; set; }
-        //
-        String size { get; set; }
+        public String code { get; set; }
+        public String[] codes { get; set; }
+        public String division { get; set; }
+        public String description { get; set; }
+        public String name { get; set; }
+        public String category { get; set; }
+        public Boolean apparel { get; set; }
+        public Boolean ecoFriendly { get; set; }
+        public Boolean giftSet { get; set; }
+        public List<String> colors { get; set; }
+        public List<String> sizes { get; set; }
+
+        public ProduitDB getProduit()
+        {
+            ProduitDB produit = new ProduitDB();
+            produit.productName = this.name;
+            produit.sku = this.code;
+            produit.description = this.description;
+            return produit;
+        }
+
+        public ProduitDB[] getChildProducts()
+        {
+            List<ProduitDB> childProducts = new List<ProduitDB>();
+            for(int i = 0; i < this.colors.Count; i++)
+            {
+                if (!this.colors[i].Equals(""))
+                {
+                    for(int j = 0; j < this.sizes.Count; j++)
+                    {
+                        ProduitDB produit = this.getProduit();
+                        produit.sku = this.code + "_" + this.colors[i] + "_" + this.sizes[j];
+                        childProducts.Add(produit);
+                    }
+                }
+            }
+            return childProducts.ToArray<ProduitDB>();
+        }
     }
 }

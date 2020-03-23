@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using BaseDonneeConversion;
+using WindowsFormsApp1.Universal_Info.Utils;
 
 namespace WindowsFormsApp1
 {
@@ -13,7 +15,7 @@ namespace WindowsFormsApp1
             int firstSheetCols = sheet.getColumnCount();
             sheet.changeSheet(2);
             int secondSheetCols = sheet.getColumnCount();
-            ArrayList bankerItems = new ArrayList();
+            List<OutsideItem> bankerItems = new List<OutsideItem>();
             CatConversionList categoriesList = new CatConversionList();
             for(int i = 1; i < rowCount; i++)
             {
@@ -42,59 +44,7 @@ namespace WindowsFormsApp1
                 }
                 bankerItems.Add(item);
             }
-            ArrayList dbItems = new ArrayList();
-            for(int i = 0; i < bankerItems.Count; i++)
-            {
-                BankersItem item = (BankersItem) bankerItems[i];
-                if (item.colors.Length > 0)
-                {
-                    ProduitDB itemGroup= new ProduitDB();
-                    itemGroup.code = item.sku + "_Group";
-                    itemGroup.descriptionEn = ProduitDB.setDescription(item.descriptionEn, item.quantities, item.prices, false);
-                    itemGroup.descriptionFr = ProduitDB.setDescription(item.description, item.quantities, item.prices, true);
-                    itemGroup.imageURL = item.defaultImage;
-                    ArrayList categories = new ArrayList();
-                    for(int k = 0; k < item.categories.Length; k++)
-                    {
-                        categoriesList.checkCategories(item.categories[k], categories);
-                    }
-                    while (categories.Count<9)
-                    {
-                        categories.Add("");
-                    }
-                    itemGroup.categories = categories;
-                    itemGroup.attributeContext = CatConversionList.getCategoryContext((String)itemGroup.categories[0], categoriesList);
-                    itemGroup.notes = "Bankers";
-                    if(item.prices.Count <= 1)
-                    {
-                        itemGroup.status = "Disable";
-                    }
-                    dbItems.Add(itemGroup);
-                    for(int j = 0; j < item.colors.Length; j++)
-                    {
-                        ProduitDB itemDB = new ProduitDB();
-                        ArrayList itemCategories = new ArrayList();
-                        itemDB.code = item.sku + "_" + item.colors[j];
-                        itemDB.code = TextManager.setItemName(itemDB.code);
-                        ProduitDB.setChildInfo(itemGroup, itemDB);
-                        if (item.prices.Count > 0)
-                        {
-                            itemDB.price = (double)item.prices[0];
-                        }
-                        while(itemCategories.Count < 9)
-                        {
-                            itemCategories.Add("");
-                        }
-                        if (item.quantities.Count > 0)
-                        {
-                            itemGroup.minQty = (int)item.quantities[0];
-                        }
-                        itemDB.attributeCouleur = item.colors[j];
-                        itemDB.notes = "Bankers";
-                        dbItems.Add(itemDB);
-                    }
-                }
-            }
+            List<ProduitDB> dbItems = ConversionUtils.getProducts(bankerItems);
             Excel output = Excel.createAndUseFile(sheet.getPath());
             ProduitDB.writeDBHeader(output);
             for(var i = 0; i < dbItems.Count; i++)
@@ -103,6 +53,31 @@ namespace WindowsFormsApp1
                 ProduitDB.writeDBItem(output, (i + 1), item);
             }
             output.save();
+        }
+
+        public static void mergeFiles(Excel convertedSheet, Excel onlineSheet)
+        {
+            int convertedCount = convertedSheet.getRowCount();
+            int onlineCount = onlineSheet.getRowCount();
+            List<ProduitDB> convertedProducts = new List<ProduitDB>();
+            List<String> productSkus = new List<String>();
+            for(int i = 1; i < convertedCount; i++)
+            {
+                ProduitDB produitDB = new ProduitDB();
+                produitDB.productName = convertedSheet.readCell(i, 0);
+                produitDB.sku = convertedSheet.readCell(i, 1);
+                productSkus.Add(produitDB.sku);
+                produitDB.productType = convertedSheet.readCell(i, 2);
+                produitDB.description = convertedSheet.readCell(i, 3);
+                produitDB.setupPrice = convertedSheet.readDoubleCell(i, 4);
+                produitDB.priceSetId = Int32.Parse(convertedSheet.readCell(i, 5));
+                produitDB.active = true;
+                convertedProducts.Add(produitDB);
+            }
+            for(int i = 1; i < onlineCount; i++)
+            {
+
+            }
         }
 
         public static void uploadPictures(Excel sheet)
@@ -133,17 +108,17 @@ namespace WindowsFormsApp1
                 if (item.colors.Length > 0)
                 {
                     ProduitDB itemGroup = new ProduitDB();
-                    itemGroup.code = item.sku + "_Group";
+                    itemGroup.sku = item.sku + "_Group";
                     itemGroup.imageURL = item.defaultImage;
                     ftpClient.downloadFile(itemGroup, imageDirectory, file);
                     dbItems.Add(itemGroup);
                     for (int j = 0; j < item.colors.Length; j++)
                     {
                         ProduitDB itemDB = new ProduitDB();
-                        itemDB.code = item.sku + "_" + item.colors[j];
-                        itemDB.code = itemDB.code.Replace("/", "_");
-                        itemDB.code = itemDB.code.Replace(" ", "_");
-                        itemDB.code = itemDB.code.Replace("\\", "_");
+                        itemDB.sku = item.sku + "_" + item.colors[j];
+                        itemDB.sku = itemDB.sku.Replace("/", "_");
+                        itemDB.sku = itemDB.sku.Replace(" ", "_");
+                        itemDB.sku = itemDB.sku.Replace("\\", "_");
                         itemDB.imageURL = item.defaultImage;
                         ftpClient.downloadFile(itemDB, imageDirectory, file);
                         dbItems.Add(itemDB);
